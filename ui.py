@@ -65,10 +65,6 @@ def ui(
 ):
     with gr.Blocks() as ui:
         with gr.Row():
-            webcam = gr.Image(source="webcam", streaming=True)
-            image_output = gr.Image()
-
-        with gr.Row():
             capture_button = gr.Button("capture")
             stop_button = gr.Button("stop")
         prompt = gr.Textbox(label="prompt", value="1girl")
@@ -84,6 +80,11 @@ def ui(
             label="workflow",
             value=config["init_workflow"],
         )
+
+        with gr.Row():
+            webcam = gr.Image(source="webcam", streaming=True).style(height=512)
+            image_output = gr.Image()
+
         capture_button.click(fn=lambda: run_capture(status_manager), inputs=[], outputs=[])
         stop_button.click(fn=lambda: stop_capture(status_manager), inputs=[], outputs=[])
         prompt.change(
@@ -115,7 +116,6 @@ def ui(
         def capture_frame(webcam):
             if webcam is not None:
                 status_manager.capture_img = webcam
-                print(2, webcam.shape)
         ui.load(
             fn=lambda: run_generate(
                 workflow_manager, generate_settings, client, status_manager
