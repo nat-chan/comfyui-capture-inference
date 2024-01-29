@@ -5,6 +5,7 @@ import gradio as gr
 from workflow_manager import GenerateSettings, WorkflowManager
 from status_manager import StatusManager
 from client import Client
+import numpy as np
 
 
 workflow_list = os.listdir("workflows")
@@ -64,9 +65,6 @@ def ui(
     status_manager: StatusManager,
 ):
     with gr.Blocks() as ui:
-        with gr.Row():
-            capture_button = gr.Button("capture")
-            stop_button = gr.Button("stop")
         prompt = gr.Textbox(label="prompt", value="1girl")
         ckpt_name = gr.Textbox(label="ckpt_name", value=config["ckpt_name"])
         denoising_strength = gr.Slider(
@@ -82,11 +80,10 @@ def ui(
         )
 
         with gr.Row():
-            webcam = gr.Image(source="webcam", streaming=True).style(height=512)
+            image_base = gr.Image()
             image_output = gr.Image()
+        execute = gr.Button(value="ベース画像にスタイルを反映させて画像生成")
 
-        capture_button.click(fn=lambda: run_capture(status_manager), inputs=[], outputs=[])
-        stop_button.click(fn=lambda: stop_capture(status_manager), inputs=[], outputs=[])
         prompt.change(
             fn=lambda x: setattr(generate_settings, "prompt", x),
             inputs=[prompt],
@@ -112,16 +109,25 @@ def ui(
             inputs=[workflow_dropdown],
             outputs=[control_strength],
         )
-        @gr.on(inputs=[webcam], outputs=[])
-        def capture_frame(webcam):
-            if webcam is not None:
-                status_manager.capture_img = webcam
-        ui.load(
-            fn=lambda: run_generate(
-                workflow_manager, generate_settings, client, status_manager
-            ),
-            inputs=[],
-            outputs=image_output,
-            every=0.01,
+
+        def execute_click(image_base: np.ndarray) -> np.ndarray:
+            if image_base is None:
+                print("image_base is None")
+                return None
+
+            workflow = workflow_manager.create(
+                input_img=image_base,
+                generate_settings=generate_settings,
+            )
+            prompt_id = client.enqueue(workflow)
+            result_img = client.polling(prompt_id)
+            img_h, img_w, _ = result_img.shape
+            generated = gr.update(value=result_img, height=img_h, width=img_w)
+            print("successfullly generated")
+            return generated
+        execute.click(
+            fn=execute_click,
+            inputs=[image_base],
+            outputs=[image_output],
         )
     return ui

@@ -32,6 +32,7 @@ class WorkflowManager:
         input_img: np.ndarray,
         generate_settings: GenerateSettings,
     ):
+        # XXX
         self.workflow[self._node_id_dict["CheckpointLoaderSimple"]]["inputs"][
             "ckpt_name"
         ] = generate_settings.ckpt_name

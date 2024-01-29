@@ -67,7 +67,7 @@
   },
   "74": {
     "inputs": {
-      "lora_name": "lcm-lora-sdv1-5.safetensors",
+      "lora_name": "lcm/lcm-lora-sdv1-5.safetensors",
       "strength_model": 1,
       "strength_clip": 1,
       "model": [
